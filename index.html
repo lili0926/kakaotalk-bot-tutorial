@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KakaoTalk 接入 API Bot 完整教程</title>
+<style>
+  /* 系统字体栈，无需加载外部字体 */
+  :root {
+    --yellow: #FAE100;
+    --yellow-dark: #E8CC00;
+    --kakao-brown: #3A1D1D;
+    --bg: #FFFDF5;
+    --surface: #FFFFFF;
+    --text: #1A1A1A;
+    --text-muted: #6B6B6B;
+    --border: #E8E4D9;
+    --code-bg: #1E1E2E;
+    --code-text: #CDD6F4;
+    --step-line: #E8E4D9;
+    --warn-bg: #FFF8E1;
+    --warn-border: #FAE100;
+    --tip-bg: #F0FAF4;
+    --tip-border: #52C97A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 15px;
+  }
+
+  /* ── 顶部 Hero ── */
+  .hero {
+    background: var(--yellow);
+    padding: 56px 24px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 20px,
+      rgba(0,0,0,.025) 20px,
+      rgba(0,0,0,.025) 21px
+    );
+  }
+
+  .hero-badge {
+    display: inline-block;
+    background: var(--kakao-brown);
+    color: var(--yellow);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    padding: 4px 12px;
+    border-radius: 2px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .hero h1 {
+    font-size: clamp(26px, 5vw, 42px);
+    font-weight: 700;
+    color: var(--kakao-brown);
+    line-height: 1.25;
+    max-width: 560px;
+    margin: 0 auto 12px;
+    position: relative;
+  }
+
+  .hero-sub {
+    font-size: 14px;
+    color: rgba(58,29,29,.65);
+    max-width: 420px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  /* ── 流程图 ── */
+  .flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0;
+    padding: 28px 24px;
+    background: var(--kakao-brown);
+  }
+
+  .flow-step {
+    background: rgba(250,225,0,.12);
+    border: 1px solid rgba(250,225,0,.25);
+    color: var(--yellow);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .flow-arrow {
+    color: rgba(250,225,0,.4);
+    font-size: 16px;
+    padding: 0 6px;
+  }
+
+  /* ── 主体 ── */
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+  }
+
+  /* ── 步骤 ── */
+  .step {
+    margin-top: 52px;
+    position: relative;
+  }
+
+  .step-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background: var(--yellow);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--kakao-brown);
+    margin-top: 2px;
+  }
+
+  .step-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--kakao-brown);
+    line-height: 1.3;
+  }
+
+  .step-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .step-body {
+    padding-left: 56px;
+  }
+
+  @media (max-width: 480px) {
+    .step-body {
+      padding-left: 0;
+    }
+  }
+
+  /* ── 有序列表 ── */
+  .step-list {
+    list-style: none;
+    counter-reset: step-counter;
+    padding: 0;
+  }
+
+  .step-list > li {
+    counter-increment: step-counter;
+    position: relative;
+    padding-left: 34px;
+    margin-bottom: 14px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.7;
+  }
+
+  .step-list > li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 22px;
+    height: 22px;
+    background: var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+
+  /* ── 无序 bullet ── */
+  .bullet-list {
+    list-style: none;
+    padding: 0;
+  }
+  .bullet-list li {
+    position: relative;
+    padding: 4px 0 4px 16px;
+    color: var(--text);
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  .bullet-list li::before {
+    content: '–';
+    position: absolute;
+    left: 0;
+    top: 4px;
+    color: var(--yellow-dark);
+    font-weight: 700;
+  }
+
+  /* ── 提示块 ── */
+  .callout {
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin: 16px 0;
+    font-size: 14px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .callout.warn {
+    background: var(--warn-bg);
+    border-left: 3px solid var(--warn-border);
+  }
+
+  .callout.tip {
+    background: var(--tip-bg);
+    border-left: 3px solid var(--tip-border);
+  }
+
+  .callout.note {
+    background: #F5F5FF;
+    border-left: 3px solid #9B9BF0;
+  }
+
+  .callout-icon { font-size: 16px; margin-top: 1px; flex-shrink: 0; }
+
+  /* ── 代码块 ── */
+  .code-block {
+    background: var(--code-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+
+  .code-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255,255,255,.06);
+    padding: 8px 14px;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, 'Courier New', monospace;
+    font-size: 11px;
+    color: rgba(205,214,244,.5);
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+
+  .code-label .dots { display: flex; gap: 5px; }
+  .code-label .dots span {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .code-label .dots span:nth-child(1) { background: #FF5F57; }
+  .code-label .dots span:nth-child(2) { background: #FEBC2E; }
+  .code-label .dots span:nth-child(3) { background: #28C840; }
+
+  pre {
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, 'Courier New', monospace;
+    color: var(--code-text);
+    line-height: 1.65;
+  }
+
+  /* JSON 语法 */
+  .json-key { color: #89DCEB; }
+  .json-str { color: #A6E3A1; }
+  .json-comment { color: #6C7086; font-style: italic; }
+
+  /* ── inline 标签 ── */
+  code {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, 'Courier New', monospace;
+    font-size: 12.5px;
+    background: rgba(58,29,29,.07);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #C0392B;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+    display: inline;
+  }
+
+  /* 列表项内所有内容强制可换行 */
+  .step-list > li > *,
+  .step-list > li > span,
+  .step-list > li strong {
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  /* ── 分隔线 ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 48px 0 0;
+  }
+
+  /* ── FAQ ── */
+  .faq-item {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 0;
+  }
+  .faq-q {
+    font-weight: 600;
+    color: var(--kakao-brown);
+    margin-bottom: 8px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .faq-q::before {
+    content: 'Q';
+    background: var(--yellow);
+    color: var(--kakao-brown);
+    font-size: 11px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+  .faq-a {
+    color: var(--text-muted);
+    font-size: 14px;
+    padding-left: 28px;
+  }
+
+  /* ── 链接卡 ── */
+  .link-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .link-card {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    background: var(--surface);
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .link-card:hover {
+    border-color: var(--yellow-dark);
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  }
+  .link-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .link-card-url {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    word-break: break-all;
+  }
+
+  /* ── 结语 ── */
+  .footer-note {
+    background: var(--kakao-brown);
+    color: var(--yellow);
+    text-align: center;
+    padding: 40px 24px;
+    margin-top: 64px;
+    font-size: 18px;
+    font-weight: 600;
+    border-radius: 12px;
+  }
+  .footer-note span { display: block; margin-top: 8px; font-size: 13px; font-weight: 400; color: rgba(250,225,0,.6); }
+
+  /* ── 节标题 ── */
+  .section-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--kakao-brown);
+    margin: 28px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .kr {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  p { margin-bottom: 10px; }
+  p:last-child { margin-bottom: 0; }
+
+  @media (max-width: 600px) {
+    .flow { gap: 4px; }
+    .flow-step { font-size: 11px; padding: 6px 10px; }
+    .step-body { padding-left: 0; }
+    .step-header { flex-direction: row; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-badge">实操教程 · 2025</div>
+  <h1>KakaoTalk<br>接入 API Bot</h1>
+  <p class="hero-sub">Kakao Developers + Kakao i Open Builder + 你自己的服务器，全流程搭建完整指南</p>
+</div>
+
+<!-- 流程总览 -->
+<div class="flow">
+  <div class="flow-step">用户发消息</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">KakaoTalk</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Open Builder</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">你的 API</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Bot 回复</div>
+</div>
+
+<div class="container">
+
+  <!-- Step 1 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div>
+        <div class="step-title">注册 Kakao 开发者账号</div>
+        <div class="step-desc">先有账号，才能创建 App 和 Bot</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <ol class="step-list">
+        <li><div>打开 <code>https://developers.kakao.com</code>，用你的 KakaoTalk 账号登录</div></li>
+        <li><div>点击右上角 <strong>내 애플리케이션</strong>（My Applications）</div></li>
+        <li><div>点击 <strong>애플리케이션 추가하기</strong>（添加应用）</div></li>
+        <li><div>填写 App Name（随便填，比如 <code>MyBot</code>）和公司名（个人用填自己名字就行）</div></li>
+        <li><div>点击 <strong>저장</strong>（保存）</div></li>
+      </ol>
+      <div class="callout tip">
+        <span class="callout-icon">✅</span>
+        <div>完成后会得到一个 <strong>앱 키（App Key）</strong>，先记下来备用。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div>
+        <div class="step-title">创建 KakaoTalk 频道 <span class="kr">카카오 채널</span></div>
+        <div class="step-desc">Bot 必须绑定在频道上，相当于微信公众号</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <ol class="step-list">
+        <li>打开 <code>https://center-pf.kakao.com</code></li>
+        <li>点击 <strong>채널 만들기</strong>（创建频道）</li>
+        <li>填写：
+          <ul class="bullet-list" style="margin-top:8px">
+            <li><strong>채널 이름</strong>（频道名称）：你 Bot 的名字</li>
+            <li><strong>검색용 아이디</strong>（搜索ID）：唯一标识，字母+数字</li>
+            <li><strong>카테고리</strong>（分类）：随便选一个就行</li>
+          </ul>
+        </li>
+        <li>点击 <strong>개설</strong>（创建）</li>
+        <li>左侧找到 <strong>채널 공개 설정</strong>（频道公开设置）<br>→ 建议先设为 <strong>비공개（不公开）</strong>，测试完再改</li>
+      </ol>
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div>新频道需要等待审核，通常几分钟到几小时不等，耐心等一下。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div>
+        <div class="step-title">在 Open Builder 创建 Chatbot</div>
+        <div class="step-desc">Bot 的大脑在这里配置</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <ol class="step-list">
+        <li>打开 <code>https://i.kakao.com</code>（Kakao i Open Builder），用 Kakao 账号登录</li>
+        <li>点右上角蓝色 <strong>➕</strong> 按钮，再选左侧两个气泡的图标</li>
+        <li>填写 Bot 名称，点 <strong>확인</strong>（确认）</li>
+        <li>进入 Bot 编辑页面 → 点左侧 <strong>설정</strong>（设置图标）</li>
+        <li>找到 <strong>채널 연결</strong>（连接频道），选择刚才创建的频道连接</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">4</div>
+      <div>
+        <div class="step-title">配置 Skill —— 你的 Webhook API <span class="kr">스킬</span></div>
+        <div class="step-desc">核心步骤！Skill = 你自己服务器上的接口</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <ol class="step-list">
+        <li>左侧点击 <strong>스킬</strong>（技能）→ <strong>스킬 추가</strong>（添加技能）</li>
+        <li>填写 Skill 名称，服务器地址填你的 API 地址（必须 HTTPS！），超时时间设 <code>5000ms</code>（Kakao 限制最大 5 秒）</li>
+        <li>左上角小框勾选，点蓝色按钮保存</li>
+        <li>点 <strong>스킬 서버 확인</strong>（检查 Skill 服务器），确保你的服务器能响应</li>
+      </ol>
+
+      <div class="callout note">
+        <span class="callout-icon">💬</span>
+        <div>如果用的不是特别快的模型，建议打开回调：<br>
+        <strong>시나리오 &gt; 폴백 블록 &gt; 左上角三个点 &gt; callback &gt; 打开保存</strong><br>
+        不需要写任何文字，打开就行，否则每条回复前都会带上你填的那段文字。打开回调后，记得在 VPS 上写回调处理代码～</div>
+      </div>
+
+      <div class="section-title">KakaoTalk 发给你的请求格式</div>
+      <div class="code-block">
+        <div class="code-label">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span>request.json</span>
+        </div>
+        <pre>{
+  <span class="json-key">"intent"</span>: {
+    <span class="json-key">"id"</span>: <span class="json-str">"xxxxx"</span>,
+    <span class="json-key">"name"</span>: <span class="json-str">"폴백 블록"</span>
+  },
+  <span class="json-key">"userRequest"</span>: {
+    <span class="json-key">"utterance"</span>: <span class="json-str">"用户说的话在这里"</span>,
+    <span class="json-key">"user"</span>: {
+      <span class="json-key">"id"</span>: <span class="json-str">"用户唯一ID"</span>,
+      <span class="json-key">"type"</span>: <span class="json-str">"botUserKey"</span>
+    },
+    <span class="json-key">"callbackUrl"</span>: <span class="json-str">"开了回调才会有此字段"</span>
+  },
+  <span class="json-key">"bot"</span>: {
+    <span class="json-key">"id"</span>: <span class="json-str">"你的botID"</span>,
+    <span class="json-key">"name"</span>: <span class="json-str">"Bot名称"</span>
+  }
+}</pre>
+      </div>
+
+      <div class="section-title">你的 API 需要返回的格式</div>
+      <div class="code-block">
+        <div class="code-label">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span>response.json</span>
+        </div>
+        <pre>{
+  <span class="json-key">"version"</span>: <span class="json-str">"2.0"</span>,
+  <span class="json-key">"template"</span>: {
+    <span class="json-key">"outputs"</span>: [
+      {
+        <span class="json-key">"simpleText"</span>: {
+          <span class="json-key">"text"</span>: <span class="json-str">"这里是 Bot 回复的内容"</span>
+        }
+      }
+    ]
+  }
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">5</div>
+      <div>
+        <div class="step-title">绑定 Skill 到 Fallback Block <span class="kr">폴백 블록</span></div>
+        <div class="step-desc">用户发任意消息都会触发，是接 API Bot 的关键</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>按照以下路径操作：</p>
+      <p>
+        <strong>시나리오</strong> → <strong>폴백 블록</strong> → 最下面的 <strong>+ 응답 추가</strong> → 选 <strong>《》스킬데이터</strong> → 蓝色按钮保存
+      </p>
+    </div>
+  </div>
+
+  <!-- Step 6 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">6</div>
+      <div>
+        <div class="step-title">部署你的 API 服务器</div>
+        <div class="step-desc">下面是 Python + Flask 最简可用示例，支持回调模式</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="code-block">
+        <div class="code-label">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span>app.py</span>
+        </div>
+        <pre>from flask import Flask, request, jsonify
+import requests, threading
+
+app = Flask(__name__)
+
+CLAUDE_API_KEY = "你的API密钥"
+FAIL_TEXT = "我有事，等会说"  # 模型出错时回这句
+
+def reply_json(text):
+    # simpleText 单气泡最多 1000 字，超了 Kakao 会拒收
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [{
+                "simpleText": {"text": (text or FAIL_TEXT)[:1000]}
+            }]
+        }
+    }
+
+def call_ai(message, timeout):
+    try:
+        r = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": CLAUDE_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json"
+            },
+            json={
+                "model": "claude-sonnet-5",
+                "max_tokens": 1024,
+                "messages": [{"role": "user", "content": message}]
+            },
+            timeout=timeout
+        )
+        return r.json()["content"][0]["text"]
+    except Exception as e:
+        print("AI 调用失败:", e)
+        return FAIL_TEXT
+
+@app.route('/kakao/webhook', methods=['POST'])
+def kakao_webhook():
+    data = request.get_json(silent=True) or {}
+    ur = data.get("userRequest", {})
+    user_message = ur.get("utterance", "")
+    callback_url = ur.get("callbackUrl")  # 开了回调才有
+
+    if callback_url:
+        # 回调模式：先告诉 Kakao「等一下」，后台慢慢生成，最多 1 分钟
+        def work():
+            text = call_ai(user_message, timeout=50)
+            requests.post(callback_url, json=reply_json(text), timeout=10)
+        threading.Thread(target=work, daemon=True).start()
+        return jsonify({"version": "2.0", "useCallback": True})
+
+    # 同步模式：必须 5 秒内回
+    return jsonify(reply_json(call_ai(user_message, timeout=4.5)))
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)</pre>
+      </div>
+
+      <div class="section-title">部署到 VPS</div>
+      <div class="code-block">
+        <div class="code-label">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span>bash</span>
+        </div>
+        <pre>pip install flask requests
+python app.py</pre>
+      </div>
+
+      <div class="callout warn">
+        <span class="callout-icon">🔒</span>
+        <div><strong>Open Builder 必须使用 HTTPS！</strong> 本地或 HTTP 地址一律不接受。用 Nginx + Let's Encrypt 配置 SSL：</div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-label">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span>nginx 配置</span>
+        </div>
+        <pre># 安装证书
+sudo apt install nginx certbot python3-certbot-nginx
+sudo certbot --nginx -d your-domain.com
+
+# 在 /etc/nginx/sites-available/default 的 443 server {} 里加：
+location /kakao/ {
+    proxy_pass http://127.0.0.1:5000;
+}
+
+# 重载
+sudo nginx -t && sudo systemctl reload nginx</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 7 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">7</div>
+      <div>
+        <div class="step-title">测试 & 部署上线 <span class="kr">배포</span></div>
+        <div class="step-desc">改动完了一定要部署，不然没用！</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <ol class="step-list">
+        <li>Open Builder 右上角点 <strong>배포</strong>（部署）→ <strong>배포하기</strong>（立即部署）</li>
+        <li>打开 KakaoTalk，搜索你的频道名称</li>
+        <li>关注后发一条消息，看看 Bot 是否正常回复 🎉</li>
+      </ol>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <div>改了 VPS 上的代码，<strong>不需要</strong>重新部署。只要在 Open Builder 网页内有改动，才需要重新部署。</div>
+      </div>
+
+      <div class="section-title">没有回复？按顺序排查</div>
+      <ol class="step-list">
+        <li>你的服务器是否在运行（本地 curl 测试一下）</li>
+        <li>Open Builder 的 Skill 检测是否通过</li>
+        <li>频道和 Bot 是否正确连接</li>
+        <li>폴백 블록 是否绑定了 Skill</li>
+      </ol>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- FAQ -->
+  <div class="step">
+    <div class="step-header">
+      <div style="font-size:28px">🤔</div>
+      <div>
+        <div class="step-title">常见问题</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="faq-item">
+        <div class="faq-q">Skill 检测一直失败？</div>
+        <div class="faq-a">确保你的服务器地址是 HTTPS，且能公网访问。Open Builder 不接受 HTTP 或 localhost。</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">消息发出去没有回复？</div>
+        <div class="faq-a">检查 폴백 블록 是否绑定了 Skill，以及 Bot 是否已经「배포（部署）」。</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">想要支持图片/按钮等富文本？</div>
+        <div class="faq-a"><code>outputs</code> 里把 <code>simpleText</code> 换成 <code>basicCard</code> 或 <code>listCard</code>，具体格式见官方文档：<code>https://i.kakao.com/docs/skill-response-format</code></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">有没有多轮对话支持？</div>
+        <div class="faq-a">KakaoTalk 不传历史记录，需要你自己在服务器端用 <code>user.id</code> 作为 key，维护对话历史（作者目前注入上下文 12 条）。</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 参考链接 -->
+  <div class="step">
+    <div class="step-header">
+      <div style="font-size:28px">🔗</div>
+      <div>
+        <div class="step-title">参考链接</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="link-cards">
+        <a href="https://i.kakao.com/docs/getting-started-overview" class="link-card" target="_blank">
+          <div class="link-card-title">Kakao i Open Builder 文档</div>
+          <div class="link-card-url">i.kakao.com/docs</div>
+        </a>
+        <a href="https://i.kakao.com/docs/skill-response-format" class="link-card" target="_blank">
+          <div class="link-card-title">Skill 请求/响应格式</div>
+          <div class="link-card-url">i.kakao.com/docs/skill-response-format</div>
+        </a>
+        <a href="https://developers.kakao.com" class="link-card" target="_blank">
+          <div class="link-card-title">Kakao Developers</div>
+          <div class="link-card-url">developers.kakao.com</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    搞定！遇到问题随时来问 ♪
+    <span>本教程由作者实操整理，与 Claude 提供的教程略有出入，以实操为准</span>
+  </div>
+
+</div>
+
+</body>
+</html>
